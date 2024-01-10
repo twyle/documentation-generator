@@ -14,7 +14,6 @@ class DocstringWriter(NodeTransformer, BaseModel):
     def visit_FunctionDef(self, node):
         docstring: str = ast.get_docstring(node=node)
         if self.config.overwrite_function_docstring or not docstring:
-            node.body[0] = make_docstring_node('')
             function_code: str = ast.get_source_segment(
                 source=self.module_code, node=node, padded=True
             )
