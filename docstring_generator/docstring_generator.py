@@ -2,9 +2,7 @@ from queue import Queue
 from threading import Thread
 
 from .config import Config
-from .file_processor import (
-    generate_module_docstrings
-)
+from .file_processor import generate_module_docstrings
 from .helpers import get_all_modules
 
 
@@ -28,7 +26,7 @@ def generate_docstrings(
             module_source_queue,
             config,
         ),
-        daemon=True
+        daemon=True,
     )
     generate_module_docstrings_thread.start()
 

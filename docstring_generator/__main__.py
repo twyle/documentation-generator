@@ -8,10 +8,7 @@ from os import path
 
 from .config import Config
 from .docstring_generator import generate_docstrings
-from .extensions import (
-    failed_modules_queue,
-    modules_source_code_queue,
-)
+from .extensions import failed_modules_queue, modules_source_code_queue
 
 parser: ArgumentParser = ArgumentParser()
 parser.add_argument('--path', nargs='?', default='.', type=str)
