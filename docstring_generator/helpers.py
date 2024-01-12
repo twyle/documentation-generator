@@ -3,6 +3,10 @@ import os
 import subprocess
 from ast import AsyncFunctionDef, Constant, Expr, FunctionDef
 from queue import Queue
+from typing import Optional, Iterator
+from os import path, listdir
+import os
+from collections import deque
 
 from langchain.prompts import PromptTemplate
 
@@ -70,7 +74,41 @@ def add_module_code_to_queue(module_path: str, module_source_queue: Queue):
 
 
 def add_module_to_queue(module_path: str, module_source_queue: Queue):
-    add_module_code_to_queue(module_path=module_path, module_source_queue=module_source_queue)
+    add_module_code_to_queue(
+        module_path=module_path, module_source_queue=module_source_queue
+    )
+
+
+class DirectoryIterator:
+    def __init__(
+        self,
+        config: Config,
+    ):
+        self.config: Config = config
+        self.queue: deque[str] = deque([self.config.path])
+
+    def __iter__(self) -> Iterator:
+        return self
+
+    def __next__(self) -> list[str]:
+        files: list[str] = list()
+        if self.queue:
+            for _ in range(len(self.queue)):
+                root_dir: str = self.queue.popleft()
+                if root_dir.split('/')[-1] in self.config.directories_ignore:
+                    continue
+                entries: list[str] = listdir(root_dir)
+                for entry in entries:
+                    entry_path: str = path.join(root_dir, entry)
+                    if path.isfile(entry_path):
+                        if entry.split('.')[-1] == 'py':
+                            files.append(entry_path)
+                    else:
+                        if entry not in self.config.directories_ignore:
+                            self.queue.append(entry_path)
+            return files
+        else:
+            raise StopIteration()
 
 
 def get_all_modules(config: Config, module_source_queue: Queue) -> None:
@@ -78,12 +116,13 @@ def get_all_modules(config: Config, module_source_queue: Queue) -> None:
     if os.path.isfile(config.path):
         add_module_to_queue(config.path, module_source_queue)
     else:
-        for root_directory, directories, modules in os.walk(config.path, topdown=False):
-            for module_name in modules:
-                if module_name.split('.')[-1] == 'py':
-                    add_module_to_queue(
-                        os.path.join(root_directory, module_name), module_source_queue
-                    )
+        directory_iterator: DirectoryIterator = DirectoryIterator(config=config)
+        for modules in directory_iterator:
+            for module in modules:
+                add_module_to_queue(
+                    module, module_source_queue
+                )
+
 
 def save_processed_file(file_path: str, processed_module_code: str) -> None:
     """Save a processed file."""

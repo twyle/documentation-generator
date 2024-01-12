@@ -3,7 +3,7 @@ from queue import Empty, Queue
 
 from .config import Config
 from .docstring_writer import DocstringWriter
-from .helpers import save_processed_file, format_file
+from .helpers import format_file, save_processed_file
 
 
 def generate_module_docstrings(
@@ -23,6 +23,8 @@ def generate_module_docstrings(
         except Empty:
             continue
         else:
-            save_processed_file(file_path=module_path, processed_module_code=new_module_code)
+            save_processed_file(
+                file_path=module_path, processed_module_code=new_module_code
+            )
             format_file(module_path)
             module_source_queue.task_done()

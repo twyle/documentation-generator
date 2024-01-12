@@ -13,9 +13,9 @@ class Config(BaseSettings):
     documentation_style: Optional[str] = Field(
         description='The format of documentation to use', default='Numpy-Style'
     )
-    directories_ignore: list[str] = Field(
+    directories_ignore: set[str] = Field(
         description='Directories to ignore',
-        default=[
-            'venv',
-        ],
+        default={
+            'venv', '__pycache__', '.git', 'build', 'dist', 'docs'
+        },
     )
