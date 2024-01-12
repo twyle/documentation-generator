@@ -19,7 +19,6 @@ def generate_module_docstrings(
             new_tree = transformer.visit(moduel_tree)
             ast.fix_missing_locations(new_tree)
             new_module_code = ast.unparse(new_tree)
-            print(new_module_code)
         except Empty:
             continue
         else:

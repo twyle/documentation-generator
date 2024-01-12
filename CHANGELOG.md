@@ -1,3 +1,16 @@
+## v0.3.0 (2024-01-12)
+
+### Feat
+
+- generates the class docstring.
+- generates the class docstring.
+
+## v0.2.1 (2024-01-12)
+
+### Fix
+
+- removes the dummy data generated for function docstrings.
+
 ## v0.2.0 (2024-01-12)
 
 ### Feat
