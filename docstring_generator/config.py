@@ -10,6 +10,9 @@ class Config(BaseSettings):
         description='Whether or not to overwrite the existing function docstring',
         default=False,
     )
+    documentation_style: Optional[str] = Field(
+        description='The format of documentation to use', default='Numpy-Style'
+    )
     directories_ignore: list[str] = Field(
         description='Directories to ignore',
         default=[
