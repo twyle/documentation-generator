@@ -1,3 +1,10 @@
+## v0.2.0 (2024-01-12)
+
+### Feat
+
+- adds a custom directory walker.
+- uses threads and ques for faster processing.
+
 ## v0.1.0 (2024-01-10)
 
 ### Feat
