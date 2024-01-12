@@ -1,12 +1,11 @@
 import ast
 import os
 import subprocess
-from ast import AsyncFunctionDef, Constant, Expr, FunctionDef, ClassDef
-from queue import Queue
-from typing import Optional, Iterator
-from os import path, listdir
-import os
+from ast import AsyncFunctionDef, ClassDef, Constant, Expr, FunctionDef
 from collections import deque
+from os import listdir, path
+from queue import Queue
+from typing import Iterator, Optional
 
 from langchain.prompts import PromptTemplate
 
@@ -44,6 +43,7 @@ def generate_function_docstring(function_code: str) -> str:
     function_and_docstring = llm.invoke(prompt_formatted_str)
     return function_and_docstring
 
+
 class_doc: str = '''
 class MyTestClass:
     """A class representing a circle with a given radius.
@@ -74,9 +74,9 @@ class MyTestClass:
         return pi * self.radius * self.radius
 '''
 
+
 def generate_class_docstring(class_code: str) -> str:
-    class_prompt_template: str = """Write NumPy-style docstrings for the following class and its
-    methods. Do not generate documentation for methods that do not exist: {class_code}"""
+    class_prompt_template: str = """Write NumPy-style docstrings for the following class and its methods. Do not generate documentation for methods that do not exist: {class_code}"""
     prompt = PromptTemplate.from_template(template=class_prompt_template)
     prompt_formatted_str: str = prompt.format(class_code=class_code)
     class_and_docstring = llm.invoke(prompt_formatted_str)
@@ -90,6 +90,18 @@ def get_class_docstring(class_and_docstring: str) -> str:
         if isinstance(node, ClassDef):
             cls_docstring: str = ast.get_docstring(node)
             return cls_docstring
+
+
+def get_class_methods_docstrings(class_and_docstring: str) -> dict[str, str]:
+    """Get a class methods docstrings."""
+    class_methods: dict[str, str] = {}
+    class_tree = ast.parse(class_and_docstring)
+    for node in class_tree.body:
+        if isinstance(node, ClassDef):
+            for class_node in node.body:
+                if isinstance(class_node, FunctionDef):
+                    class_methods[class_node.name] = ast.get_docstring(class_node)
+    return class_methods
 
 
 def make_docstring_node(docstr: str):
@@ -165,9 +177,7 @@ def get_all_modules(config: Config, module_source_queue: Queue) -> None:
         directory_iterator: DirectoryIterator = DirectoryIterator(config=config)
         for modules in directory_iterator:
             for module in modules:
-                add_module_to_queue(
-                    module, module_source_queue
-                )
+                add_module_to_queue(module, module_source_queue)
 
 
 def save_processed_file(file_path: str, processed_module_code: str) -> None:

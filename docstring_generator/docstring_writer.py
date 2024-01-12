@@ -1,5 +1,5 @@
-from _ast import ClassDef, FunctionDef
 import ast
+from _ast import ClassDef, FunctionDef
 from ast import NodeTransformer
 from typing import Any
 
@@ -7,8 +7,12 @@ from pydantic import BaseModel, Field
 
 from .config import Config
 from .helpers import (
-    generate_function_docstring, get_function_docstring, make_docstring_node,
-    generate_class_docstring, get_class_docstring
+    generate_class_docstring,
+    generate_function_docstring,
+    get_class_docstring,
+    get_function_docstring,
+    make_docstring_node,
+    get_class_methods_docstrings
 )
 
 
@@ -38,4 +42,12 @@ class DocstringWriter(NodeTransformer, BaseModel):
             class_docstring: str = get_class_docstring(class_and_docstring)
             new_docstring_node = make_docstring_node(class_docstring)
             node.body.insert(0, new_docstring_node)
+            methods_docstrings: dict[str, str] = get_class_methods_docstrings(class_and_docstring)
+            for class_node in node.body:
+                if isinstance(class_node, FunctionDef):
+                    function_doc: str = ast.get_docstring(node=class_node)
+                    if not function_doc:
+                        function_name: str = class_node.name
+                        new_docstring_node = make_docstring_node(methods_docstrings[function_name])
+                        class_node.body.insert(0, new_docstring_node)
         return node
