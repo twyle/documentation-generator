@@ -53,7 +53,7 @@ The API uses an [MIT License](LICENSE)
 
 ## Developer
 
-Lyle Okoth – [@lyleokoth](https://twitter.com/lylethokoth) on twitter
+Lyle Okoth – [@lyleokoth](https://twitter.com/lyleokoth) on twitter
 
 [lyle okoth](https://medium.com/@lyle-okoth) on medium
 

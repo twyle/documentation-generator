@@ -1,22 +1,36 @@
-from collections import deque
+from queue import Queue
+from threading import Thread
 
 from .config import Config
-from .file_processor import generate_file_docstrings, save_processed_files
+from .file_processor import (
+    generate_module_docstrings
+)
 from .helpers import get_all_modules
 
 
 def generate_docstrings(
     config: Config,
-    modules_queue: deque,
-    processed_modules_queue: deque,
-    failed_modules_queue: deque,
+    module_source_queue: Queue,
+    failed_modules_queue: Queue,
 ) -> None:
     """Generate docstrings for classes and methods."""
-    get_all_modules(config=config, queue=modules_queue)
-    generate_file_docstrings(
-        modules_queue=modules_queue,
-        processed_modules_queue=processed_modules_queue,
-        failed_modules_queue=failed_modules_queue,
-        config=config,
+    generate_source_code_thread: Thread = Thread(
+        target=get_all_modules,
+        name='generate_file_docstrings',
+        args=(config, module_source_queue),
     )
-    save_processed_files(processed_modules_queue=processed_modules_queue)
+    generate_source_code_thread.start()
+
+    generate_module_docstrings_thread: Thread = Thread(
+        target=generate_module_docstrings,
+        name='generate_module_docstrings',
+        args=(
+            module_source_queue,
+            config,
+        ),
+        daemon=True
+    )
+    generate_module_docstrings_thread.start()
+
+    generate_source_code_thread.join()
+    module_source_queue.join()
