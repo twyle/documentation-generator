@@ -1,7 +1,7 @@
 import ast
 import os
 import subprocess
-from ast import AsyncFunctionDef, Constant, Expr, FunctionDef
+from ast import AsyncFunctionDef, Constant, Expr, FunctionDef, ClassDef
 from queue import Queue
 from typing import Optional, Iterator
 from os import path, listdir
@@ -44,6 +44,53 @@ def generate_function_docstring(function_code: str) -> str:
     function_and_docstring = llm.invoke(prompt_formatted_str)
     return function_and_docstring
 
+class_doc: str = '''
+class MyTestClass:
+    """A class representing a circle with a given radius.
+
+    Attributes:
+        radius (int | float): The radius of the circle.
+
+    Methods:
+        __init__(radius: int | float) -> None:
+            Initializes a MyTestClass object with the given radius.
+
+        calculate_area() -> float:
+            Calculates and returns the area of the circle using the formula: pi * radius^2.
+    """
+
+    def __init__(self, radius: int | float) -> None:
+        """Initializes a MyTestClass object with the given radius.
+
+        Parameters:
+            radius (int | float): The radius of the circle."""
+        self.radius = radius
+
+    def calculate_area(self) -> float:
+        """Calculates and returns the area of the circle.
+
+        Returns:
+            float: The area of the circle using the formula: pi * radius^2."""
+        return pi * self.radius * self.radius
+'''
+
+def generate_class_docstring(class_code: str) -> str:
+    class_prompt_template: str = """Write NumPy-style docstrings for the following class and its
+    methods. Do not generate documentation for methods that do not exist: {class_code}"""
+    prompt = PromptTemplate.from_template(template=class_prompt_template)
+    prompt_formatted_str: str = prompt.format(class_code=class_code)
+    class_and_docstring = llm.invoke(prompt_formatted_str)
+    return class_and_docstring
+
+
+def get_class_docstring(class_and_docstring: str) -> str:
+    """Get the class docstring."""
+    class_tree = ast.parse(class_and_docstring)
+    for node in class_tree.body:
+        if isinstance(node, ClassDef):
+            cls_docstring: str = ast.get_docstring(node)
+            return cls_docstring
+
 
 def make_docstring_node(docstr: str):
     constant_str: Constant = Constant(docstr)
@@ -66,7 +113,6 @@ def get_module_source_code(module_path: str) -> str:
 
 
 def add_module_code_to_queue(module_path: str, module_source_queue: Queue):
-    print(module_path)
     module_src: str = ''
     if module_path:
         module_src = get_module_source_code(module_path)
