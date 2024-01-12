@@ -30,19 +30,19 @@ def add(a: int, b: int) -> int:
 '''
 
 
-def generate_function_docstring(function_code: str) -> str:
-    return function_doc
-
-
 # def generate_function_docstring(function_code: str) -> str:
-#     function_prompt_template: str = """
-#     Write a NumPy-style docstring for the following function: {function}.
-#     Make sure to return the function and its docstring as well as the exceptions that maybe thrown.
-#     """
-#     prompt = PromptTemplate.from_template(template=function_prompt_template)
-#     prompt_formatted_str: str = prompt.format(function=function_code)
-#     function_and_docstring = llm.invoke(prompt_formatted_str)
-#     return function_and_docstring
+#     return function_doc
+
+
+def generate_function_docstring(function_code: str) -> str:
+    function_prompt_template: str = """
+    Write a NumPy-style docstring for the following function: {function}.
+    Make sure to return the function and its docstring as well as the exceptions that maybe thrown.
+    """
+    prompt = PromptTemplate.from_template(template=function_prompt_template)
+    prompt_formatted_str: str = prompt.format(function=function_code)
+    function_and_docstring = llm.invoke(prompt_formatted_str)
+    return function_and_docstring
 
 
 def make_docstring_node(docstr: str):
