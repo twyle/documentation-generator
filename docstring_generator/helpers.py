@@ -35,15 +35,15 @@ def add(a: int, b: int) -> int:
 
 
 def generate_function_docstring(function_code: str) -> str:
-    # function_prompt_template: str = """
-    # Write a NumPy-style docstring for the following function: {function}.
-    # Make sure to return the function and its docstring as well as the exceptions that maybe thrown.
-    # """
-    # prompt = PromptTemplate.from_template(template=function_prompt_template)
-    # prompt_formatted_str: str = prompt.format(function=function_code)
-    # function_and_docstring = llm.invoke(prompt_formatted_str)
-    # return function_and_docstring
-    return function_doc
+    function_prompt_template: str = """
+    Write a NumPy-style docstring for the following function: {function}.
+    Make sure to return the function and its docstring as well as the exceptions that maybe thrown.
+    """
+    prompt = PromptTemplate.from_template(template=function_prompt_template)
+    prompt_formatted_str: str = prompt.format(function=function_code)
+    function_and_docstring = llm.invoke(prompt_formatted_str)
+    return function_and_docstring
+    # return function_doc
 
 
 class_doc: str = '''
@@ -78,12 +78,12 @@ class MyTestClass:
 
 
 def generate_class_docstring(class_code: str) -> str:
-    # class_prompt_template: str = """Write NumPy-style docstrings for the following class and its methods. Do not generate documentation for methods that do not exist: {class_code}"""
-    # prompt = PromptTemplate.from_template(template=class_prompt_template)
-    # prompt_formatted_str: str = prompt.format(class_code=class_code)
-    # class_and_docstring = llm.invoke(prompt_formatted_str)
-    # return class_and_docstring
-    return class_doc
+    class_prompt_template: str = """Write NumPy-style docstrings for the following class and its methods. Do not generate documentation for methods that do not exist: {class_code}"""
+    prompt = PromptTemplate.from_template(template=class_prompt_template)
+    prompt_formatted_str: str = prompt.format(class_code=class_code)
+    class_and_docstring = llm.invoke(prompt_formatted_str)
+    return class_and_docstring
+    # return class_doc
 
 
 def get_class_docstring(class_and_docstring: str) -> str:
