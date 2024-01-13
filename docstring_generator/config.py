@@ -1,17 +1,20 @@
-from typing import Optional
+from typing import List, Optional
 
-from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic import BaseModel, Field
 
 
-class Config(BaseSettings):
-    path: str = Field(description='The path to the source code directory')
+class Config(BaseModel):
+    path: set[str] = Field(description='The path to the source code directory')
     overwrite_function_docstring: Optional[bool] = Field(
         description='Whether or not to overwrite the existing function docstring',
         default=False,
     )
     overwrite_class_docstring: Optional[bool] = Field(
         description='Whether or not to overwrite the existing class docstring',
+        default=False,
+    )
+    overwrite_class_methods_docstring: Optional[bool] = Field(
+        description='Whether or not to overwrite the existing class methods docstring',
         default=False,
     )
     documentation_style: Optional[str] = Field(
@@ -21,5 +24,9 @@ class Config(BaseSettings):
     )
     directories_ignore: set[str] = Field(
         description='Directories to ignore',
-        default={'venv', '__pycache__', '.git', 'build', 'dist', 'docs'},
+        default={'venv', '.venv', '__pycache__', '.git', 'build', 'dist', 'docs'},
+    )
+    files_ignore: set[str] = Field(
+        description='Files to ignore',
+        default_factory=set,
     )
