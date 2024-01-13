@@ -21,6 +21,10 @@ def generate_module_docstrings(
             new_module_code = ast.unparse(new_tree)
         except Empty:
             continue
+        except Exception as e:
+            print(e)
+            module_source_queue.task_done()
+            continue
         else:
             save_processed_file(
                 file_path=module_path, processed_module_code=new_module_code

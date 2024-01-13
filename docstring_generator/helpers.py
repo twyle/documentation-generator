@@ -184,14 +184,21 @@ def get_all_modules(config: Config, module_source_queue: Queue) -> None:
             for modules in directory_iterator:
                 for module in modules:
                     add_module_to_queue(module, module_source_queue)
+    add_module_to_queue('', module_source_queue)
 
 
 def save_processed_file(file_path: str, processed_module_code: str) -> None:
     """Save a processed file."""
-    with open(file_path, 'w') as f:
-        f.write(processed_module_code)
+    try:
+        with open(file_path, 'w') as f:
+            f.write(processed_module_code)
+    except FileNotFoundError as e:
+        print(e)
+    except Exception as e:
+        print(e)
 
 
 def format_file(file_path: str) -> None:
     """Format the file using black."""
-    subprocess.run(['black', file_path])
+    if os.path.exists(file_path):
+        subprocess.run(['black', file_path])
