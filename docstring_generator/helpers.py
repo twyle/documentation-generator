@@ -34,14 +34,15 @@ def add(a: int, b: int) -> int:
 
 
 def generate_function_docstring(function_code: str) -> str:
-    function_prompt_template: str = """
-    Write a NumPy-style docstring for the following function: {function}.
-    Make sure to return the function and its docstring as well as the exceptions that maybe thrown.
-    """
-    prompt = PromptTemplate.from_template(template=function_prompt_template)
-    prompt_formatted_str: str = prompt.format(function=function_code)
-    function_and_docstring = llm.invoke(prompt_formatted_str)
-    return function_and_docstring
+    # function_prompt_template: str = """
+    # Write a NumPy-style docstring for the following function: {function}.
+    # Make sure to return the function and its docstring as well as the exceptions that maybe thrown.
+    # """
+    # prompt = PromptTemplate.from_template(template=function_prompt_template)
+    # prompt_formatted_str: str = prompt.format(function=function_code)
+    # function_and_docstring = llm.invoke(prompt_formatted_str)
+    # return function_and_docstring
+    return function_doc
 
 
 class_doc: str = '''
@@ -76,11 +77,12 @@ class MyTestClass:
 
 
 def generate_class_docstring(class_code: str) -> str:
-    class_prompt_template: str = """Write NumPy-style docstrings for the following class and its methods. Do not generate documentation for methods that do not exist: {class_code}"""
-    prompt = PromptTemplate.from_template(template=class_prompt_template)
-    prompt_formatted_str: str = prompt.format(class_code=class_code)
-    class_and_docstring = llm.invoke(prompt_formatted_str)
-    return class_and_docstring
+    # class_prompt_template: str = """Write NumPy-style docstrings for the following class and its methods. Do not generate documentation for methods that do not exist: {class_code}"""
+    # prompt = PromptTemplate.from_template(template=class_prompt_template)
+    # prompt_formatted_str: str = prompt.format(class_code=class_code)
+    # class_and_docstring = llm.invoke(prompt_formatted_str)
+    # return class_and_docstring
+    return class_doc
 
 
 def get_class_docstring(class_and_docstring: str) -> str:
@@ -143,7 +145,7 @@ class DirectoryIterator:
         config: Config,
     ):
         self.config: Config = config
-        self.queue: deque[str] = deque([self.config.path])
+        self.queue: deque[str] = deque(self.config.path)
 
     def __iter__(self) -> Iterator:
         return self
@@ -159,7 +161,10 @@ class DirectoryIterator:
                 for entry in entries:
                     entry_path: str = path.join(root_dir, entry)
                     if path.isfile(entry_path):
-                        if entry.split('.')[-1] == 'py':
+                        if (
+                            entry_path not in self.config.files_ignore
+                            and entry.split('.')[-1] == 'py'
+                        ):
                             files.append(entry_path)
                     else:
                         if entry not in self.config.directories_ignore:
@@ -171,13 +176,14 @@ class DirectoryIterator:
 
 def get_all_modules(config: Config, module_source_queue: Queue) -> None:
     """Iterate throug all the directories from the root directory."""
-    if os.path.isfile(config.path):
-        add_module_to_queue(config.path, module_source_queue)
-    else:
-        directory_iterator: DirectoryIterator = DirectoryIterator(config=config)
-        for modules in directory_iterator:
-            for module in modules:
-                add_module_to_queue(module, module_source_queue)
+    for entry in config.path:
+        if os.path.isfile(entry):
+            add_module_to_queue(entry, module_source_queue)
+        else:
+            directory_iterator: DirectoryIterator = DirectoryIterator(config=config)
+            for modules in directory_iterator:
+                for module in modules:
+                    add_module_to_queue(module, module_source_queue)
 
 
 def save_processed_file(file_path: str, processed_module_code: str) -> None:
