@@ -26,7 +26,9 @@ class DocstringWriter(NodeTransformer, BaseModel):
             function_code: str = ast.get_source_segment(
                 source=self.module_code, node=node, padded=True
             )
-            function_and_docstring: str = generate_function_docstring(function_code)
+            function_and_docstring: str = generate_function_docstring(
+                function_code, self.config
+            )
             function_docstring: str = get_function_docstring(function_and_docstring)
             new_docstring_node = make_docstring_node(function_docstring)
             node.body.insert(0, new_docstring_node)
@@ -38,7 +40,7 @@ class DocstringWriter(NodeTransformer, BaseModel):
             class_code: str = ast.get_source_segment(
                 source=self.module_code, node=node, padded=True
             )
-            class_and_docstring: str = generate_class_docstring(class_code)
+            class_and_docstring: str = generate_class_docstring(class_code, self.config)
             class_docstring: str = get_class_docstring(class_and_docstring)
             new_docstring_node = make_docstring_node(class_docstring)
             node.body.insert(0, new_docstring_node)

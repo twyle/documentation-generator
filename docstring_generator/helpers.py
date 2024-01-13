@@ -1,6 +1,7 @@
 import ast
 import os
 import subprocess
+from argparse import ArgumentParser, Namespace
 from ast import AsyncFunctionDef, ClassDef, Constant, Expr, FunctionDef
 from collections import deque
 from os import listdir, path
@@ -33,9 +34,9 @@ def add(a: int, b: int) -> int:
 #     return function_doc
 
 
-def generate_function_docstring(function_code: str) -> str:
-    function_prompt_template: str = """
-    Write a NumPy-style docstring for the following function: {function}.
+def generate_function_docstring(function_code: str, config: Config) -> str:
+    function_prompt_template: str = f"""
+    Write a {config.documentation_style} docstring for the following function: {function_code}.
     Make sure to return the function and its docstring as well as the exceptions that maybe thrown.
     """
     prompt = PromptTemplate.from_template(template=function_prompt_template)
@@ -76,22 +77,28 @@ class MyTestClass:
 '''
 
 
-def generate_class_docstring(class_code: str) -> str:
-    class_prompt_template: str = """Write NumPy-style docstrings for the following class and its methods. Do not generate documentation for methods that do not exist: {class_code}"""
+def generate_class_docstring(class_code: str, config: Config) -> str:
+    class_prompt_template: str = f"""Write {config.documentation_style} docstrings for the following class and its methods. Do not generate documentation for methods that do not exist. Make sure to only return the class and its docstring, nothing else: {class_code}"""
     prompt = PromptTemplate.from_template(template=class_prompt_template)
     prompt_formatted_str: str = prompt.format(class_code=class_code)
     class_and_docstring = llm.invoke(prompt_formatted_str)
+    print(class_and_docstring)
     return class_and_docstring
     # return class_doc
 
 
 def get_class_docstring(class_and_docstring: str) -> str:
     """Get the class docstring."""
-    class_tree = ast.parse(class_and_docstring)
-    for node in class_tree.body:
-        if isinstance(node, ClassDef):
-            cls_docstring: str = ast.get_docstring(node)
-            return cls_docstring
+    try:
+        class_tree = ast.parse(class_and_docstring)
+        for node in class_tree.body:
+            if isinstance(node, ClassDef):
+                cls_docstring: str = ast.get_docstring(node)
+                return cls_docstring
+    except IndentationError as e:
+        print(
+            'Unable to parse the generated documentation. This error is currently being worked on. It is caused by the llm generating extra methods for the class.'
+        )
 
 
 def get_class_methods_docstrings(class_and_docstring: str) -> dict[str, str]:
@@ -184,7 +191,6 @@ def get_all_modules(config: Config, module_source_queue: Queue) -> None:
             for modules in directory_iterator:
                 for module in modules:
                     add_module_to_queue(module, module_source_queue)
-    add_module_to_queue('', module_source_queue)
 
 
 def save_processed_file(file_path: str, processed_module_code: str) -> None:
@@ -201,4 +207,62 @@ def save_processed_file(file_path: str, processed_module_code: str) -> None:
 def format_file(file_path: str) -> None:
     """Format the file using black."""
     if os.path.exists(file_path):
-        subprocess.run(['black', file_path])
+        subprocess.run(['black', file_path], capture_output=True)
+
+
+def parse_arguments() -> Namespace:
+    parser = ArgumentParser(
+        prog='docstring-generator',
+        description='Generate docstrings for your python projects',
+        epilog='Thanks for using %(prog)s! :)',
+    )
+    parser.add_argument('--path', nargs='*', default=['.'], type=str)
+    parser.add_argument('--config-file', nargs='?', default='', type=str)
+    parser.add_argument('--OPENAI_API_KEY', nargs='?', default='', type=str)
+    parser.add_argument(
+        '--overwrite-function-docstring', nargs='?', default=False, type=bool
+    )
+    parser.add_argument(
+        '--overwrite-class-docstring', nargs='?', default=False, type=bool
+    )
+    parser.add_argument(
+        '--overwrite-class-methods-docstring', nargs='?', default=False, type=bool
+    )
+    parser.add_argument('--directories-ignore', nargs='*', default=[], type=str)
+    parser.add_argument('--files-ignore', nargs='*', default=[], type=str)
+    parser.add_argument(
+        '--documentation-style',
+        nargs='?',
+        default='Numpy-Style',
+        choices=['Numpy-Style', 'Google-Style', 'Sphinx-Style'],
+        type=str,
+    )
+    args = parser.parse_args()
+    paths: list[str] = args.path
+
+    for entry in paths:
+        if not path.exists(entry):
+            print(f"The target directory '{entry}' doesn't exist")
+            raise SystemExit(1)
+
+    if args.OPENAI_API_KEY:
+        os.environ['OPENAI_API_KEY'] = args.OPENAI_API_KEY
+
+    if not os.environ.get('OPENAI_API_KEY', None):
+        print('You have not provided the open ai api key.')
+        raise SystemExit(1)
+
+    return args
+
+
+def create_application_config(args: Namespace) -> Config:
+    config: Config = Config(
+        path=set(args.path),
+        overwrite_function_docstring=args.overwrite_function_docstring,
+        overwrite_class_docstring=args.overwrite_class_docstring,
+        overwrite_class_methods_docstring=args.overwrite_class_methods_docstring,
+        documentation_style=args.documentation_style,
+    )
+    config.directories_ignore.update(args.directories_ignore)
+    config.files_ignore.update(args.files_ignore)
+    return config

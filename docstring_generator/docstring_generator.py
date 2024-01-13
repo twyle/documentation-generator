@@ -19,16 +19,16 @@ def generate_docstrings(
     )
     generate_source_code_thread.start()
 
-    generate_module_docstrings_thread: Thread = Thread(
-        target=generate_module_docstrings,
-        name='generate_module_docstrings',
-        args=(
-            module_source_queue,
-            config,
-        ),
-        daemon=True,
-    )
-    generate_module_docstrings_thread.start()
+    for _ in range(3):
+        generate_module_docstrings_thread: Thread = Thread(
+            target=generate_module_docstrings,
+            args=(
+                module_source_queue,
+                config,
+            ),
+            daemon=True,
+        )
+        generate_module_docstrings_thread.start()
 
     generate_source_code_thread.join()
     module_source_queue.join()
