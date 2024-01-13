@@ -20,7 +20,7 @@ class Config(BaseModel):
     documentation_style: Optional[str] = Field(
         description='The format of documentation to use',
         default='Numpy-Style',
-        enum=['Numpy-Style'],
+        enum=['Numpy-Style', 'Google-Style', 'Sphinx-Style'],
     )
     directories_ignore: set[str] = Field(
         description='Directories to ignore',
