@@ -32,7 +32,8 @@ export OPENAI_API_KEY=sk-xxxxxxxxxxx
 Then run the application, providing the path to the python file to generate docs for or the folder containing the python files:
 
 ```sh
-python -m docstring_generator --path test_function.py
+python -m docstring_generator --path /home/lyle/tutorial/test-docstrings-generator/test/ --directories-ignore venv
+--files-ignore test.py --overwrite-function-docstring True --overwrite-class-docstring True --overwrite-class-methods-docstring True --documentation-style Numpy-Style
 ```
 
 <p align=center>
