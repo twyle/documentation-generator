@@ -33,7 +33,7 @@ Then run the application, providing the path to the python file to generate docs
 
 ```sh
 python -m docstring_generator --path /home/lyle/tutorial/test-docstrings-generator/test/ --directories-ignore venv
---files-ignore test.py --overwrite-function-docstring True --overwrite-class-docstring True --overwrite-class-methods-docstring True--documentation-style Numpy-Style
+--files-ignore test.py --overwrite-function-docstring True --overwrite-class-docstring True --overwrite-class-methods-docstring True --documentation-style Numpy-Style
 ```
 
 <p align=center>
