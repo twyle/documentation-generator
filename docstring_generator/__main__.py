@@ -1,10 +1,16 @@
 from argparse import Namespace
+
 from dotenv import load_dotenv
 
 load_dotenv()
 from .config import Config
 from .docstring_generator import generate_docstrings
-from .extensions import failed_modules_queue, modules_source_code_queue
+from .extensions import (
+    failed_modules_queue,
+    functions_source_code_queue,
+    modules_path_queue,
+    class_source_code_queue,
+)
 from .helpers import create_application_config, parse_arguments
 
 
@@ -19,8 +25,10 @@ def run():
     config: Config = create_application_config(args)
     generate_docstrings(
         config=config,
-        module_source_queue=modules_source_code_queue,
+        module_path_queue=modules_path_queue,
+        functions_source_queue=functions_source_code_queue,
         failed_modules_queue=failed_modules_queue,
+        class_source_queue=class_source_code_queue,
     )
 
 
