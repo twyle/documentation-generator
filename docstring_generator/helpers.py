@@ -6,101 +6,38 @@ from ast import AsyncFunctionDef, ClassDef, Constant, Expr, FunctionDef
 from collections import deque
 from os import listdir, path
 from queue import Queue
-from typing import Iterator, Optional
+from typing import Iterator
 
 from langchain.prompts import PromptTemplate
 
 from .config import Config
 from .extensions import llm
-from .templates import get_function_prompt_template
-
-function_doc: str = '''
-def add(a: int, b: int) -> int:
-    """Returns the sum of two integers.
-
-    Parameters:
-    a (int): First integer.
-    b (int): Second integer.
-
-    Returns:
-    int: Sum of a and b.
-
-    Raises:
-    TypeError: If either a or b is not an integer."""
-    return a + b
-'''
-
-
-# def generate_function_docstring(function_code: str) -> str:
-#     return function_doc
+from .templates import get_function_prompt_template, get_class_prompt_template
 
 
 def generate_function_docstring(function_code: str, config: Config) -> str:
-    function_prompt_template: str = f"""
-    Write a {config.documentation_style} docstring for the following function: {function_code}.
-    Make sure to return the function and its docstring as well as the exceptions that maybe thrown.
-    """
-    prompt = PromptTemplate.from_template(template=function_prompt_template)
-    prompt_formatted_str: str = prompt.format(function=function_code)
+    prompt_formatted_str: str = get_function_prompt_template(
+        function_code=function_code, config=config
+    )
     function_and_docstring = llm.invoke(prompt_formatted_str)
-    # Handle badly written functions
     return function_and_docstring
-    # return function_doc
-
-
-class_doc: str = '''
-class MyTestClass:
-    """A class representing a circle with a given radius.
-
-    Attributes:
-        radius (int | float): The radius of the circle.
-
-    Methods:
-        __init__(radius: int | float) -> None:
-            Initializes a MyTestClass object with the given radius.
-
-        calculate_area() -> float:
-            Calculates and returns the area of the circle using the formula: pi * radius^2.
-    """
-
-    def __init__(self, radius: int | float) -> None:
-        """Initializes a MyTestClass object with the given radius.
-
-        Parameters:
-            radius (int | float): The radius of the circle."""
-        self.radius = radius
-
-    def calculate_area(self) -> float:
-        """Calculates and returns the area of the circle.
-
-        Returns:
-            float: The area of the circle using the formula: pi * radius^2."""
-        return pi * self.radius * self.radius
-'''
 
 
 def generate_class_docstring(class_code: str, config: Config) -> str:
-    class_prompt_template: str = f"""Write {config.documentation_style} docstrings for the following class and its methods. Do not generate documentation for methods that do not exist. Make sure to only return the class and its docstring, nothing else: {class_code}"""
-    prompt = PromptTemplate.from_template(template=class_prompt_template)
-    prompt_formatted_str: str = prompt.format(class_code=class_code)
+    prompt_formatted_str: str = get_class_prompt_template(
+        class_code=class_code, config=config
+    )
     class_and_docstring = llm.invoke(prompt_formatted_str)
-    print(class_and_docstring)
     return class_and_docstring
-    # return class_doc
 
 
 def get_class_docstring(class_and_docstring: str) -> str:
     """Get the class docstring."""
-    try:
-        class_tree = ast.parse(class_and_docstring)
-        for node in class_tree.body:
-            if isinstance(node, ClassDef):
-                cls_docstring: str = ast.get_docstring(node)
-                return cls_docstring
-    except IndentationError as e:
-        print(
-            'Unable to parse the generated documentation. This error is currently being worked on. It is caused by the llm generating extra methods for the class.'
-        )
+    class_tree = ast.parse(class_and_docstring)
+    for node in class_tree.body:
+        if isinstance(node, ClassDef):
+            cls_docstring: str = ast.get_docstring(node)
+            return cls_docstring
 
 
 def get_class_methods_docstrings(class_and_docstring: str) -> dict[str, str]:
@@ -126,7 +63,7 @@ def get_function_docstring(function_and_docstring: str) -> str:
     for node in function_tree.body:
         if isinstance(node, (FunctionDef, AsyncFunctionDef)):
             function_docstring: str = ast.get_docstring(node)
-    return function_docstring
+            return function_docstring
 
 
 def get_module_source_code(module_path: str) -> str:
@@ -142,17 +79,38 @@ def add_module_code_to_queue(module_path: str, module_source_queue: Queue):
     module_source_queue.put((module_path, module_src))
 
 
-def add_module_to_queue(module_path: str, module_source_queue: Queue):
-    add_module_code_to_queue(
-        module_path=module_path, module_source_queue=module_source_queue
-    )
+def add_module_to_queue(module_path: str, module_path_queue: Queue):
+    module_path_queue.put(module_path)
+
+
+def get_node_source(node, module_src: str) -> str:
+    return ast.get_source_segment(source=module_src, node=node)
+
+
+def get_functions_source(module_path: str) -> list[str]:
+    functions_src: list[str] = []
+    module_src = get_module_source_code(module_path)
+    module_tree = ast.parse(module_src)
+    for node in module_tree.body:
+        if isinstance(node, FunctionDef):
+            function_src: str = get_node_source(node=node, module_src=module_src)
+            functions_src.append((node.name, function_src))
+    return functions_src
+
+
+def get_class_source(module_path: str) -> None:
+    class_src: list[str] = []
+    module_src = get_module_source_code(module_path)
+    module_tree = ast.parse(module_src)
+    for node in module_tree.body:
+        if isinstance(node, ClassDef):
+            classsrc: str = get_node_source(node=node, module_src=module_src)
+            class_src.append((node.name, classsrc))
+    return class_src
 
 
 class DirectoryIterator:
-    def __init__(
-        self,
-        config: Config,
-    ):
+    def __init__(self, config: Config):
         self.config: Config = config
         self.queue: deque[str] = deque(self.config.path)
 
@@ -175,24 +133,23 @@ class DirectoryIterator:
                             and entry.split('.')[-1] == 'py'
                         ):
                             files.append(entry_path)
-                    else:
-                        if entry not in self.config.directories_ignore:
-                            self.queue.append(entry_path)
+                    elif entry not in self.config.directories_ignore:
+                        self.queue.append(entry_path)
             return files
         else:
             raise StopIteration()
 
 
-def get_all_modules(config: Config, module_source_queue: Queue) -> None:
+def get_all_modules(config: Config, module_path_queue: Queue) -> None:
     """Iterate throug all the directories from the root directory."""
     for entry in config.path:
         if os.path.isfile(entry):
-            add_module_to_queue(entry, module_source_queue)
+            add_module_to_queue(entry, module_path_queue)
         else:
             directory_iterator: DirectoryIterator = DirectoryIterator(config=config)
             for modules in directory_iterator:
                 for module in modules:
-                    add_module_to_queue(module, module_source_queue)
+                    add_module_to_queue(module, module_path_queue)
 
 
 def save_processed_file(file_path: str, processed_module_code: str) -> None:
@@ -241,19 +198,15 @@ def parse_arguments() -> Namespace:
     )
     args = parser.parse_args()
     paths: list[str] = args.path
-
     for entry in paths:
         if not path.exists(entry):
             print(f"The target directory '{entry}' doesn't exist")
             raise SystemExit(1)
-
     if args.OPENAI_API_KEY:
         os.environ['OPENAI_API_KEY'] = args.OPENAI_API_KEY
-
     if not os.environ.get('OPENAI_API_KEY', None):
         print('You have not provided the open ai api key.')
         raise SystemExit(1)
-
     return args
 
 
