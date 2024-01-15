@@ -111,7 +111,9 @@ class DocstringWriter(NodeTransformer, BaseModel):
             function_code: str = ast.get_source_segment(
                 source=self.module_code, node=node, padded=True
             )
-            function_and_docstring: str = generate_function_docstring(function_code)
+            function_and_docstring: str = generate_function_docstring(
+                function_code, self.config
+            )
             function_docstring: str = get_function_docstring(function_and_docstring)
             new_docstring_node = make_docstring_node(function_docstring)
             node.body.insert(0, new_docstring_node)
@@ -174,11 +176,11 @@ class DocstringWriter(NodeTransformer, BaseModel):
                         ...
         '''
         docstring: str = ast.get_docstring(node=node)
-        if not docstring:
+        if not docstring or self.config.overwrite_class_docstring:
             class_code: str = ast.get_source_segment(
                 source=self.module_code, node=node, padded=True
             )
-            class_and_docstring: str = generate_class_docstring(class_code)
+            class_and_docstring: str = generate_class_docstring(class_code, self.config)
             class_docstring: str = get_class_docstring(class_and_docstring)
             new_docstring_node = make_docstring_node(class_docstring)
             node.body.insert(0, new_docstring_node)
@@ -188,7 +190,10 @@ class DocstringWriter(NodeTransformer, BaseModel):
             for class_node in node.body:
                 if isinstance(class_node, FunctionDef):
                     function_doc: str = ast.get_docstring(node=class_node)
-                    if not function_doc:
+                    if (
+                        not function_doc
+                        or self.config.overwrite_class_methods_docstring
+                    ):
                         function_name: str = class_node.name
                         new_docstring_node = make_docstring_node(
                             methods_docstrings[function_name]

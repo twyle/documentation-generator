@@ -1,3 +1,14 @@
+## v0.4.0 (2024-01-13)
+
+### Feat
+
+- gets all the configs from the commandline.
+
+### Fix
+
+- removes the dummy class and func docstrings.
+- handles the file processing exceptions.
+
 ## v0.3.0 (2024-01-12)
 
 ### Feat

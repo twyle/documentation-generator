@@ -1,34 +1,28 @@
-from argparse import ArgumentParser
+from argparse import Namespace
 from dotenv import load_dotenv
 
 load_dotenv()
-import os
-from os import path
 from .config import Config
 from .docstring_generator import generate_docstrings
 from .extensions import failed_modules_queue, modules_source_code_queue
+from .helpers import create_application_config, parse_arguments
 
-parser: ArgumentParser = ArgumentParser()
-parser.add_argument('--path', nargs='?', default='.', type=str)
-parser.add_argument('--OPENAI_API_KEY', nargs='?', default='', type=str)
-parser.add_argument(
-    '--overwrite-function-docstring', nargs='?', default=False, type=bool
-)
-args = parser.parse_args()
-source_code_dir: str = args.path
-if not path.exists(source_code_dir):
-    print(f"The target directory '{source_code_dir}' doesn't exist")
-    raise SystemExit(1)
-if args.OPENAI_API_KEY:
-    os.environ['OPENAI_API_KEY'] = args.OPENAI_API_KEY
-if not os.environ.get('OPENAI_API_KEY', None):
-    print('You have not provided the open ai api key.')
-    raise SystemExit(1)
-config: Config = Config(
-    path=source_code_dir, overwrite_function_docstring=args.overwrite_function_docstring
-)
-generate_docstrings(
-    config=config,
-    module_source_queue=modules_source_code_queue,
-    failed_modules_queue=failed_modules_queue,
-)
+
+def run():
+    """Runs the application by parsing arguments, creating a configuration, and generating docstrings.
+
+    Returns:
+        function: The run function.
+        docstring: The docstring for the run function.
+        exceptions: Any exceptions that may be thrown during execution."""
+    args: Namespace = parse_arguments()
+    config: Config = create_application_config(args)
+    generate_docstrings(
+        config=config,
+        module_source_queue=modules_source_code_queue,
+        failed_modules_queue=failed_modules_queue,
+    )
+
+
+if __name__ == '__main__':
+    run()
