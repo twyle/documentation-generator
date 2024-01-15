@@ -11,6 +11,7 @@ from langchain.prompts import PromptTemplate
 
 from .config import Config
 from .extensions import llm
+from .templates import get_function_prompt_template
 
 function_doc: str = '''
 def add(a: int, b: int) -> int:
@@ -33,14 +34,12 @@ def add(a: int, b: int) -> int:
 #     return function_doc
 
 
-def generate_function_docstring(function_code: str) -> str:
-    function_prompt_template: str = """
-    Write a NumPy-style docstring for the following function: {function}.
-    Make sure to return the function and its docstring as well as the exceptions that maybe thrown.
-    """
-    prompt = PromptTemplate.from_template(template=function_prompt_template)
-    prompt_formatted_str: str = prompt.format(function=function_code)
+def generate_function_docstring(function_code: str, config: Config) -> str:
+    prompt_formatted_str: str = get_function_prompt_template(
+        function_code=function_code, config=config
+    )
     function_and_docstring = llm.invoke(prompt_formatted_str)
+    # Handle badly written functions
     return function_and_docstring
 
 
